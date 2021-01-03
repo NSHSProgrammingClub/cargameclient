@@ -1,5 +1,20 @@
+let USE_PROD_SERVERS=true;
+if(USE_PROD_SERVERS){
+    var iceServers=[{
+        "urls":["turn:priv.larrys.tech:3478"],
+        "username":"test",
+        "credential":"test"
+    }]
+    var websocketURL="wss://priv.larrys.tech:8080";
+}else{
+    var iceServers=[{
+        urls: "stun:stun.l.google.com:19302"
+    }]
+    var websocketURL="ws://localhost:8080";
+}
+
 window.onload = () => {
-    var socket = new WebSocket("ws://localhost:8080");
+    var socket = new WebSocket(websocketURL);
     socket.onopen = (event) => {
         socket.send(JSON.stringify({
             type: "openClient"
@@ -15,9 +30,7 @@ window.onload = () => {
         closeConnection();
         iceCandidatesToProcess=[];
         connection = new RTCPeerConnection({
-            iceServers: [{
-                urls: "stun:stun.l.google.com:19302"
-            }]
+            iceServers:iceServers
         });
 
         connection.onicecandidate = (event) => {
