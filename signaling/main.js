@@ -37,6 +37,7 @@ if(USE_PROD_SERVERS){
 
 server.listen(port, function() {
     log.log("Server is listening on port "+port+(USE_PROD_SERVERS?" with tls":""));
+
 });
 
 wsServer = new WebSocketServer({
