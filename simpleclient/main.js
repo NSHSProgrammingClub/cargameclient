@@ -1,4 +1,5 @@
-let USE_PROD_SERVERS=true;
+let DEBUG_WEBRTC=false;
+let USE_PROD_SERVERS=false;
 if(USE_PROD_SERVERS){
     var iceServers=[{
         "urls":["turn:priv.larrys.tech:3478"],
@@ -12,7 +13,7 @@ if(USE_PROD_SERVERS){
     }]
     var websocketURL="ws://localhost:8080";
 }
-
+var tracks=[];
 window.onload = () => {
     var socket = new WebSocket(websocketURL);
     socket.onopen = (event) => {
@@ -30,7 +31,8 @@ window.onload = () => {
         closeConnection();
         iceCandidatesToProcess=[];
         connection = new RTCPeerConnection({
-            iceServers:iceServers
+            iceServers:iceServers,
+            sdpSemantics: "unified-plan"
         });
 
         connection.onicecandidate = (event) => {
@@ -39,11 +41,11 @@ window.onload = () => {
                     type: "clientIceCandidate",
                     candidate: JSON.stringify(event.candidate)
                 }));
-                console.log("sent ice candidate ");
+                if(DEBUG_WEBRTC)console.log("sent ice candidate ");
             }
         };
         connection.oniceconnectionstatechange = (event) => {
-            console.log("connection state "+ connection.iceConnectionState);
+            if(DEBUG_WEBRTC)console.log("connection state "+ connection.iceConnectionState);
             switch (connection.iceConnectionState) {
                 case "closed":
                 case "failed":
@@ -52,13 +54,15 @@ window.onload = () => {
             }
         };
         connection.ontrack = (event)=>{
-
-            document.getElementById("received_video").srcObject = event.streams[0];
-            document.getElementById("received_video").play();
-            console.log("Track event ",event.streams);
+            for (var i = 0; i < event.streams.length; i++) {
+                let stream=event.streams[i];
+                tracks.push(event.track);
+                document.getElementById(event.track.label+"-cam").srcObject =stream;
+            }
+            if(DEBUG_WEBRTC)console.log("Track event ",event.streams);
         };
         connection.onremovetrack = (event)=>{
-            console.log("Track removal event "+event);
+            if(DEBUG_WEBRTC)console.log("Track removal event "+event);
         };
     }
     function closeConnection(){
@@ -75,17 +79,17 @@ window.onload = () => {
         let data = JSON.parse(event.data);
         if (data.type == "openClientInfo") {
             clientId = data.id;
-            console.log(clientId);
+            if(DEBUG_WEBRTC)console.log(clientId);
         } else if (data.type == "openClientAssigned") {
             serverId = data.assignedServer;
             createPeerConnection();
         } else if (data.type == "serverOfferSDP") {
 
-            console.log("recieved sdp");
+            if(DEBUG_WEBRTC)console.log("recieved sdp");
 
             connection.setRemoteDescription({type:"offer",sdp:data.sdp})
                 .then(() => {
-                    console.log("processing "+iceCandidatesToProcess.length+" queued ice canidates");
+                    if(DEBUG_WEBRTC)console.log("processing "+iceCandidatesToProcess.length+" queued ice canidates");
 
                     for (var i = 0; i < iceCandidatesToProcess.length; i++) {
                         connection.addIceCandidate(iceCandidatesToProcess[i]);
@@ -103,14 +107,14 @@ window.onload = () => {
                         type: "clientAnswerSDP",
                         sdp: connection.localDescription.sdp
                     }));
-                    console.log("sent reply sdp ");
+                    if(DEBUG_WEBRTC)console.log("sent reply sdp ");
                 });
         } else if (data.type == "serverIceCandidate") {
             var candidate = new RTCIceCandidate(JSON.parse(data.candidate));
 
             if(connection&& connection.remoteDescription && connection.remoteDescription.type){
                 connection.addIceCandidate(candidate);
-                console.log("processed recieved ice candidate");
+                if(DEBUG_WEBRTC)console.log("processed recieved ice candidate");
             }else{
                 iceCandidatesToProcess.push(candidate);
 

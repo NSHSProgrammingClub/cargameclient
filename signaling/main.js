@@ -5,7 +5,7 @@ let {
     screen
 } = require("./interface");
 
-let USE_PROD_SERVERS=true;
+let USE_PROD_SERVERS=false;
 
 
 let WebSocketServer = require("websocket").server;
