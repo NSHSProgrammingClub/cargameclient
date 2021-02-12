@@ -33,7 +33,7 @@ class App extends React.Component {
                         reader.readAsDataURL(new Blob([imageData], {type: "image/png"}))
                         reader.onloadend = function() {
                             images[currentIndex] = reader.result
-                            if (currentIndex == 5) {
+                            if (currentIndex === 5) {
                                 const loader = new THREE.CubeTextureLoader()
                                 scene.background = loader.load(images)
                             }
